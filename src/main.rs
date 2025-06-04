@@ -2,9 +2,12 @@ use actix_web::{App, HttpServer};
 use actix_cors::Cors;
 
 mod routes;
+mod db;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let db = db::DataBase::open("db.sql").expect("Database err");
+    db.migrate();
 
     let port: u16 = 8080;
 
