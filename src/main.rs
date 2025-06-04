@@ -1,14 +1,7 @@
-use actix_web::{web, App, HttpServer, HttpResponse};
+use actix_web::{App, HttpServer};
 use actix_cors::Cors;
-use serde_json::json;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-async fn health_check() -> HttpResponse {
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "timestamp": SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
-    }))
-}
+mod routes;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -24,7 +17,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_header()
                     .max_age(3600)
             )
-            .route("/health", web::get().to(health_check))
+            .configure(routes::config)
     })
     .bind(("0.0.0.0", port))?
     .run()
