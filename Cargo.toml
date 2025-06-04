@@ -4,5 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+actix-cors = "0.7.1"
+actix-web = "4.11.0"
 rusqlite = "0.36.0"
-tokio = "1.45.1"
+serde_json = "1.0.140"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
