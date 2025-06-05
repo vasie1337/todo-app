@@ -20,6 +20,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_header()
                     .max_age(3600)
             )
+            .app_data(actix_web::web::Data::new(db.clone()))
             .configure(routes::config)
     })
     .bind(("0.0.0.0", port))?

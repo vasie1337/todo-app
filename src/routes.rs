@@ -1,10 +1,17 @@
-
+use actix_web::{web, HttpResponse};
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
-use actix_web::{web, HttpResponse};
+
+use crate::db::DataBase;
+use crate::db::TaskEntry;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/health").route(web::get().to(health_check)));
+    cfg.service(
+        web::resource("/health").route(web::get().to(health_check))
+    )
+    .service(
+        web::resource("/tasks").route(web::post().to(add_task))
+    );
 }
  
 async fn health_check() -> HttpResponse {
@@ -14,4 +21,6 @@ async fn health_check() -> HttpResponse {
     }))
 }
 
-async fn add_task
+async fn add_task(db: web::Data<DataBase>, req: web::Json<TaskEntry>) -> HttpResponse {
+    HttpResponse::Ok().json(json!({"message": "Task added successfully"}))
+}

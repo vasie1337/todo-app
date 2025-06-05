@@ -1,7 +1,8 @@
-use rusqlite::{params, Connection, OptionalExtension, Result as SqliteResult};
-use serde::{Deserialize, Serialize};
+use rusqlite::{Connection, Result as SqliteResult};
+use serde::Deserialize;
 use std::sync::{Arc, Mutex};
 
+#[derive(Debug, Deserialize)]
 pub struct TaskEntry {
     pub id: i64,
     pub text: String,
@@ -10,6 +11,7 @@ pub struct TaskEntry {
     pub updated_at: i64
 }
 
+#[derive(Clone)]
 pub struct DataBase(
     pub Arc<Mutex<Connection>>
 );
