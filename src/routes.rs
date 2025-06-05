@@ -9,7 +9,9 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         web::resource("/health").route(web::get().to(health_check))
     )
     .service(
-        web::resource("/tasks").route(web::post().to(add_task))
+        web::resource("/tasks")
+            .route(web::post().to(add_task))
+            .route(web::get().to(list_tasks))
     );
 }
  
@@ -20,7 +22,7 @@ async fn health_check() -> HttpResponse {
 }
 
 async fn add_task(db: web::Data<DataBase>, req: web::Json<CreateTaskRequest>) -> HttpResponse {
-    match db.insert_task(&req) {
+    match db.insert(&req) {
         Ok(task_id) => {
             HttpResponse::Ok().json(json!({
                 "message": "Task added successfully",
@@ -31,6 +33,23 @@ async fn add_task(db: web::Data<DataBase>, req: web::Json<CreateTaskRequest>) ->
         Err(e) => {
             HttpResponse::InternalServerError().json(json!({
                 "error": "Failed to add task",
+                "details": e.to_string()
+            }))
+        }
+    }
+}
+
+async fn list_tasks(db: web::Data<DataBase>) -> HttpResponse {
+    match db.get_all() {
+        Ok(tasks) => {
+            HttpResponse::Ok().json(json!({
+                "tasks": tasks,
+                "count": tasks.len()
+            }))
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to fetch tasks",
                 "details": e.to_string()
             }))
         }

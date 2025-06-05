@@ -1,11 +1,20 @@
-use rusqlite::{Connection, Result as SqliteResult};
-use serde::Deserialize;
+use rusqlite::{Connection, Result as SqliteResult, Row};
+use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateTaskRequest {
     pub text: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Task {
+    pub id: i64,
+    pub text: String,
+    pub completed: bool,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 #[derive(Clone)]
@@ -32,7 +41,7 @@ impl DataBase {
         Ok(())
     }
     
-    pub fn insert_task(&self, req: &CreateTaskRequest) -> SqliteResult<i64> {
+    pub fn insert(&self, req: &CreateTaskRequest) -> SqliteResult<i64> {
         let current_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -55,5 +64,27 @@ impl DataBase {
         )?;
         
         Ok(conn.last_insert_rowid())
+    }
+
+    pub fn get_all(&self) -> SqliteResult<Vec<Task>> {
+        let conn = self.0.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, text, completed, created_at, updated_at FROM tasks ORDER BY created_at DESC")?;
+        
+        let task_iter = stmt.query_map([], |row: &Row| {
+            Ok(Task {
+                id: row.get(0)?,
+                text: row.get(1)?,
+                completed: row.get(2)?,
+                created_at: row.get(3)?,
+                updated_at: row.get(4)?,
+            })
+        })?;
+        
+        let mut tasks = Vec::new();
+        for task in task_iter {
+            tasks.push(task?);
+        }
+        
+        Ok(tasks)
     }
 }
