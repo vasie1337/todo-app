@@ -3,6 +3,7 @@ use actix_cors::Cors;
 
 mod routes;
 mod db;
+mod handlers;
 
 const APP_PORT: u16 = 8080;
 
