@@ -1,14 +1,11 @@
 use rusqlite::{Connection, Result as SqliteResult};
 use serde::Deserialize;
 use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Deserialize)]
-pub struct TaskEntry {
-    pub id: i64,
+pub struct CreateTaskRequest {
     pub text: String,
-    pub completed: bool,
-    pub created_at: i64,
-    pub updated_at: i64
 }
 
 #[derive(Clone)]
@@ -35,4 +32,28 @@ impl DataBase {
         Ok(())
     }
     
+    pub fn insert_task(&self, req: &CreateTaskRequest) -> SqliteResult<i64> {
+        let current_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "INSERT INTO tasks (
+                text, 
+                completed, 
+                created_at, 
+                updated_at
+            ) VALUES (?1, ?2, ?3, ?4)",
+            (
+                &req.text,
+                false,
+                current_time,
+                current_time
+            ),
+        )?;
+        
+        Ok(conn.last_insert_rowid())
+    }
 }

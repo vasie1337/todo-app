@@ -1,9 +1,8 @@
 use actix_web::{web, HttpResponse};
 use serde_json::json;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::db::DataBase;
-use crate::db::TaskEntry;
+use crate::db::{CreateTaskRequest};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -16,11 +15,24 @@ pub fn config(cfg: &mut web::ServiceConfig) {
  
 async fn health_check() -> HttpResponse {
     HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "timestamp": SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+        "status": "ok"
     }))
 }
 
-async fn add_task(db: web::Data<DataBase>, req: web::Json<TaskEntry>) -> HttpResponse {
-    HttpResponse::Ok().json(json!({"message": "Task added successfully"}))
+async fn add_task(db: web::Data<DataBase>, req: web::Json<CreateTaskRequest>) -> HttpResponse {
+    match db.insert_task(&req) {
+        Ok(task_id) => {
+            HttpResponse::Ok().json(json!({
+                "message": "Task added successfully",
+                "id": task_id,
+                "text": req.text
+            }))
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to add task",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
