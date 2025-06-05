@@ -87,4 +87,44 @@ impl DataBase {
         
         Ok(tasks)
     }
+
+    pub fn get_by_id(&self, id: i64) -> SqliteResult<Option<Task>> {
+        let conn = self.0.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, text, completed, created_at, updated_at FROM tasks WHERE id = ?1")?;
+        
+        let mut task_iter = stmt.query_map([id], |row: &Row| {
+            Ok(Task {
+                id: row.get(0)?,
+                text: row.get(1)?,
+                completed: row.get(2)?,
+                created_at: row.get(3)?,
+                updated_at: row.get(4)?,
+            })
+        })?;
+        
+        match task_iter.next() {
+            Some(task) => Ok(Some(task?)),
+            None => Ok(None),
+        }
+    }
+
+    pub fn delete_task(&self, id: i64) -> SqliteResult<bool> {
+        let conn = self.0.lock().unwrap();
+        let rows_affected = conn.execute("DELETE FROM tasks WHERE id = ?1", [id])?;
+        Ok(rows_affected > 0)
+    }
+
+    pub fn complete_task(&self, id: i64) -> SqliteResult<bool> {
+        let current_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+            
+        let conn = self.0.lock().unwrap();
+        let rows_affected = conn.execute(
+            "UPDATE tasks SET completed = true, updated_at = ?1 WHERE id = ?2",
+            (current_time, id)
+        )?;
+        Ok(rows_affected > 0)
+    }
 }
